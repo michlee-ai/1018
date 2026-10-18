@@ -114,6 +114,18 @@ TESTS = {
         ("6", "*\n**\n***\n****\n*****\n******"),
     ],
 }
+SAMPLES = {
+    1: ("3 5", "8"),
+    2: ("4 6", "24"),
+    3: ("3 9 5", "9"),
+    4: ("5\n1 2 4 7 8", "3"),
+    5: ("5", "15"),
+    6: ("3", "3\n6\n9\n12\n15\n18\n21\n24\n27"),
+    7: ("5032", "10"),
+    8: ("python", "6"),
+    9: ("120", "21"),
+    10: ("4", "*\n**\n***\n****"),
+}
 SOLUTIONS = {
     1: {
         "code": "a, b = map(int, input().split())\nprint(a + b)",
@@ -384,8 +396,7 @@ class LimitedOutput(io.StringIO):
 safe_names = "print input int float str bool len abs round min max sum sorted map list range".split()
 safe_builtins = {name: getattr(__builtins__, name) for name in safe_names if hasattr(__builtins__, name)} if not isinstance(__builtins__, dict) else {name: __builtins__[name] for name in safe_names if name in __builtins__}
 compiled = compile(payload["code"], "<student-code>", "exec")
-results = []
-for index, case in enumerate(payload["tests"]):
+def run_case(case):
     old_stdin = sys.stdin
     output = LimitedOutput()
     try:
@@ -394,12 +405,21 @@ for index, case in enumerate(payload["tests"]):
         with contextlib.redirect_stdout(output):
             exec(compiled, scope, scope)
         passed = output.getvalue().strip() == case["output"].strip()
-        results.append({"index": index, "passed": passed})
+        return passed, None
     except Exception as error:
-        results.append({"index": index, "passed": False, "error": type(error).__name__})
+        return False, type(error).__name__
     finally:
         sys.stdin = old_stdin
-print(json.dumps(results))
+
+results = []
+for index, case in enumerate(payload["tests"]):
+    passed, error = run_case(case)
+    result = {"index": index, "passed": passed}
+    if error:
+        result["error"] = error
+    results.append(result)
+sample_passed, sample_error = run_case(payload["sample"])
+print(json.dumps({"results": results, "sample_passed": sample_passed, "sample_error": sample_error}))
 """
 
 
@@ -440,6 +460,7 @@ def grade(problem_id, code):
         "tests": [
             {"input": data, "output": expected} for data, expected in TESTS[problem_id]
         ],
+        "sample": {"input": SAMPLES[problem_id][0], "output": SAMPLES[problem_id][1]},
     }
     try:
         completed = subprocess.run(
@@ -762,7 +783,8 @@ class Handler(BaseHTTPRequestHandler):
                     return
                 session["grading"] = True
                 grading_started = True
-            results = grade(problem_id, payload.get("code"))
+            grade_result = grade(problem_id, payload.get("code"))
+            results = grade_result["results"]
             with SESSION_LOCK:
                 session = SESSIONS[token]
                 session["grading"] = False
@@ -773,11 +795,18 @@ class Handler(BaseHTTPRequestHandler):
                     if student:
                         session["next_problem"] = student["next_problem"]
                 next_problem = session["next_problem"]
-            self.send_json(200, {"results": results, "next_problem": next_problem})
+            self.send_json(200, {**grade_result, "next_problem": next_problem})
         except ValueError as error:
             if grading_started:
                 self.clear_grading(token)
-            self.send_json(400, {"error": str(error)})
+            message = str(error)
+            if message.startswith("파이썬 문법을 확인"):
+                error_kind = "syntax"
+            elif "교육 범위 밖" in message or "허용된 기본 함수" in message:
+                error_kind = "curriculum"
+            else:
+                error_kind = "validation"
+            self.send_json(400, {"error": message, "error_kind": error_kind})
         except TimeoutError as error:
             if grading_started:
                 self.clear_grading(token)
