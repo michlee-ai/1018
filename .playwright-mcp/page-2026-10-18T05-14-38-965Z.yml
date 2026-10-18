@@ -1,0 +1,74 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e26]:
+    - generic [ref=e27]:
+      - generic [ref=e28]: "{ }"
+      - generic [ref=e29]: 코드교실 / MIDDLE SCHOOL PYTHON
+    - generic [ref=e30]:
+      - generic [ref=e31]: 0 / 10 완료
+      - generic "답안확인27" [ref=e32]: 답
+      - button "로그아웃" [ref=e33] [cursor=pointer]
+  - generic [ref=e34]:
+    - complementary [ref=e35]: 중학 파이썬 코스
+    - main [ref=e36]:
+      - generic [ref=e37]: 학습 코스 / 중학 파이썬 첫걸음
+      - generic [ref=e38]:
+        - generic [ref=e39]:
+          - generic [ref=e40]: PROBLEM 01 / 10
+          - heading "두 수를 더해요" [level=1] [ref=e41]
+          - paragraph [ref=e42]: 입력과 출력부터 차근차근 시작해 봅시다.
+        - generic [ref=e43]: 기초 문법
+      - generic [ref=e44]:
+        - region "문제" [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: 문제
+              - generic [ref=e49]: 문장을 읽고 조건에 맞는 프로그램을 작성하세요
+            - generic [ref=e50]: "01"
+          - generic [ref=e51]:
+            - paragraph [ref=e52]: 정수 두 개가 한 줄에 주어집니다. 두 수를 더한 값을 출력하는 프로그램을 작성하세요.
+            - generic [ref=e53]:
+              - generic [ref=e54]: 예시
+              - generic [ref=e55]:
+                - generic [ref=e56]:
+                  - generic [ref=e57]: 입력
+                  - code [ref=e58]: 3 5
+                - generic [ref=e59]:
+                  - generic [ref=e60]: 출력
+                  - code [ref=e61]: "8"
+            - generic [ref=e62]:
+              - heading "입력과 출력" [level=2] [ref=e63]
+              - paragraph [ref=e64]: 첫째 줄에 정수 두 개가 공백으로 구분되어 주어집니다. 두 수의 합을 한 줄에 출력합니다.
+            - generic [ref=e65]:
+              - generic [ref=e66]: "*"
+              - generic [ref=e67]: 채점에는 예시 외 비공개 테스트도 사용됩니다.
+        - generic [ref=e68]:
+          - region "파이썬 코드 입력" [ref=e69]:
+            - generic [ref=e70]:
+              - generic [ref=e71]:
+                - generic [ref=e72]: PY
+                - text: solution.py
+              - generic [ref=e73]: · 준비 완료
+            - generic [ref=e74]:
+              - generic [ref=e75]: "1"
+              - textbox "파이썬 코드 입력창" [ref=e76]:
+                - /placeholder: "# 여기에 파이썬 코드를 작성하세요"
+            - generic [ref=e77]:
+              - generic [ref=e78]: Ln 1, Col 1
+              - generic [ref=e79]: Python 3
+          - generic [ref=e80]:
+            - generic [ref=e81]: 코드를 실행해 모든 테스트를 통과하면 다음 문제가 열립니다.
+            - generic [ref=e82]:
+              - button "모범 답안" [ref=e83] [cursor=pointer]
+              - button "▶ 실행하고 채점하기" [ref=e84] [cursor=pointer]:
+                - generic [ref=e85]: ▶
+                - text: 실행하고 채점하기
+          - region "채점 결과" [ref=e86]:
+            - generic [ref=e87]:
+              - generic [ref=e88]:
+                - generic [ref=e89]: 채점 결과
+                - generic [ref=e90]: 코드를 실행하면 결과를 확인할 수 있어요
+              - generic [ref=e91]: —
+            - generic [ref=e92]: 예시 입력을 먼저 확인하고 코드를 작성해 보세요.
+          - generic [ref=e94]:
+            - button "← 이전 문제" [disabled] [ref=e95]
+            - button "다음 문제 →" [disabled] [ref=e96]

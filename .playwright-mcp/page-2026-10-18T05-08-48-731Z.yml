@@ -1,0 +1,28 @@
+- region "다시 만나서 반가워요" [ref=e183]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "{ }"
+      - generic [ref=e6]: 코드교실
+    - generic [ref=e7]: MIDDLE SCHOOL PYTHON
+    - heading "다시 만나서 반가워요" [level=1] [ref=e184]
+    - paragraph [ref=e9]: 가입할 때 사용한 학급 코드와 이름, 4자리 PIN을 입력해 주세요.
+    - generic [ref=e10]:
+      - generic [ref=e11]:
+        - generic [ref=e12]: 학급 코드
+        - textbox "학급 코드" [ref=e13]: PYTHON-01
+      - generic [ref=e14]:
+        - generic [ref=e15]: 학생 이름 또는 별명
+        - textbox "학생 이름 또는 별명" [ref=e16]:
+          - /placeholder: "예: 민지"
+          - text: 확인학생27
+      - generic [ref=e17]:
+        - generic [ref=e18]: 4자리 PIN
+        - textbox "4자리 PIN" [ref=e19]:
+          - /placeholder: ● ● ● ●
+      - status [ref=e20]
+      - button "로그인하고 이어하기" [ref=e185] [cursor=pointer]
+    - button "처음인가요? 새 계정 만들기" [ref=e186] [cursor=pointer]
+    - generic [ref=e23]:
+      - strong [ref=e24]: "체험용 학급 코드: PYTHON-01"
+      - text: 실제 학급에서는 선생님이 알려 주신 코드를 입력해 주세요.
+    - paragraph [ref=e25]: PIN은 안전하게 변환해 저장합니다. 생일처럼 다른 사람이 쉽게 알 수 있는 숫자는 피해주세요.

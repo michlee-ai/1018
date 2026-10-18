@@ -1,0 +1,134 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "{ }"
+      - generic [ref=e6]: 코드교실 / PYTHON LAB
+    - generic [ref=e7]:
+      - generic [ref=e8]: 브라우저 채점 엔진 준비 완료
+      - generic [ref=e10]: 내 작업실
+      - generic "학생 프로필" [ref=e11]: 나
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]: WORKSPACE
+      - button "⌘ 문제 풀이" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: ⌘
+        - text: 문제 풀이
+      - button "▤ 문제 관리" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: ▤
+        - text: 문제 관리
+      - generic [ref=e20]: 내 문제 (3)
+      - generic [ref=e21]:
+        - button "두 수의 합 01" [ref=e22] [cursor=pointer]:
+          - generic [ref=e23]: 두 수의 합
+          - generic [ref=e24]: "01"
+        - button "짝수와 홀수 02" [ref=e25] [cursor=pointer]:
+          - generic [ref=e26]: 짝수와 홀수
+          - generic [ref=e27]: "02"
+        - button "리스트의 합 03" [ref=e28] [cursor=pointer]:
+          - generic [ref=e29]: 리스트의 합
+          - generic [ref=e30]: "03"
+      - button "＋ 새 문제 만들기" [ref=e31] [cursor=pointer]
+      - generic [ref=e32]:
+        - strong [ref=e33]: 교육과정 안에서 안전하게
+        - text: 코드 실행 전 문법 범위를 확인하고, 파일·네트워크 접근 같은 위험한 기능은 제한합니다.
+    - main [ref=e34]:
+      - generic [ref=e35]: 내 작업실 / 파이썬 문제 풀이 / 두 수의 합
+      - generic [ref=e36]:
+        - generic [ref=e37]:
+          - heading "두 수의 합" [level=1] [ref=e38]
+          - paragraph [ref=e39]: 한 줄에 정수 두 개가 주어집니다. 두 수의 합을 출력하세요.
+        - generic [ref=e40]:
+          - generic [ref=e41]: 기초 과정
+          - generic [ref=e42]: 테스트 3개
+      - generic [ref=e43]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - generic [ref=e48]: 문제 설명
+              - generic [ref=e49]: 아래 테스트 데이터를 모두 통과해 보세요
+            - generic [ref=e50]: 01 / BASIC
+          - generic [ref=e51]:
+            - heading "두 수의 합" [level=2] [ref=e52]
+            - paragraph [ref=e53]: 한 줄에 정수 두 개가 주어집니다. 두 수의 합을 출력하세요.
+            - generic [ref=e54]:
+              - generic [ref=e55]: 예시
+              - generic [ref=e56]:
+                - text: 입력 3 5
+                - text: 출력 8
+            - generic [ref=e58]:
+              - generic [ref=e59]: 테스트 데이터
+              - generic [ref=e60]: 입력값과 기대 출력값
+            - generic [ref=e61]:
+              - generic [ref=e62]:
+                - generic [ref=e63]:
+                  - generic [ref=e64]: CASE 01 · 입력
+                  - button "테스트 데이터 삭제" [ref=e65] [cursor=pointer]: 삭제
+                - textbox "테스트 1 입력 데이터" [ref=e66]: 3 5
+                - generic [ref=e68]: 기대 출력
+                - textbox "테스트 1 기대 출력 데이터" [ref=e69]: "8"
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - generic [ref=e72]: CASE 02 · 입력
+                  - button "테스트 데이터 삭제" [ref=e73] [cursor=pointer]: 삭제
+                - textbox "테스트 2 입력 데이터" [ref=e74]: "-4 10"
+                - generic [ref=e76]: 기대 출력
+                - textbox "테스트 2 기대 출력 데이터" [ref=e77]: "6"
+              - generic [ref=e78]:
+                - generic [ref=e79]:
+                  - generic [ref=e80]: CASE 03 · 입력
+                  - button "테스트 데이터 삭제" [ref=e81] [cursor=pointer]: 삭제
+                - textbox "테스트 3 입력 데이터" [ref=e82]: 120 35
+                - generic [ref=e84]: 기대 출력
+                - textbox "테스트 3 기대 출력 데이터" [ref=e85]: "155"
+            - button "＋ 테스트 데이터 추가" [ref=e86] [cursor=pointer]
+        - generic [ref=e87]:
+          - generic [ref=e88]:
+            - generic [ref=e89]:
+              - generic [ref=e90]:
+                - generic [ref=e91]: PY
+                - text: solution.py
+                - generic [ref=e92]: · 준비 완료
+              - combobox "교육과정 단계" [ref=e94]:
+                - option "기초" [selected]
+                - option "중급"
+                - option "심화"
+            - generic [ref=e95]:
+              - generic [ref=e96]: "1"
+              - textbox "파이썬 코드 편집기" [ref=e97]: a, b = map(int, input().split()) print(a + b)
+            - generic [ref=e98]:
+              - generic [ref=e99]: Ln 1, Col 1
+              - generic [ref=e100]: Python 3 | UTF-8
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - text: 제출 전 교육과정 범위와
+              - text: 테스트 데이터를 함께 확인합니다.
+            - button "▶ 코드 실행 및 채점" [ref=e103] [cursor=pointer]:
+              - generic [ref=e104]: ▶
+              - text: 코드 실행 및 채점
+          - generic [ref=e105]:
+            - generic [ref=e106]:
+              - generic [ref=e107]:
+                - generic [ref=e108]: 채점 결과
+                - generic [ref=e109]: 실행 후 테스트 결과가 표시됩니다
+              - generic [ref=e111]: — / 3
+            - generic [ref=e112]:
+              - text: 코드를 작성한 뒤 실행 버튼을 눌러 주세요.
+              - text: 입력 데이터별 결과를 바로 확인할 수 있습니다.
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - generic [ref=e116]:
+                - generic [ref=e117]: 교육과정 분석
+                - generic [ref=e118]: 선택한 단계의 문법만 사용 가능
+              - generic [ref=e119]: 분석 대기
+            - generic [ref=e120]:
+              - generic [ref=e121]: 실행할 때 Python 문법 트리를 검사해 범위 밖 문법과 위험한 기능을 차단합니다.
+              - generic [ref=e122]:
+                - generic [ref=e123]: 변수
+                - generic [ref=e124]: 입출력
+                - generic [ref=e125]: 자료형
+                - generic [ref=e126]: 산술 연산
+                - generic [ref=e127]: 비교·논리 연산
+                - generic [ref=e128]: 조건문
+              - generic [ref=e129]:
+                - generic [ref=e130]: ✓
+                - generic [ref=e131]: "기초 과정: 허용된 문법만 검사한 뒤 실행해요. 외부 모듈, 파일 접근, 속성 접근은 모든 단계에서 제한됩니다."

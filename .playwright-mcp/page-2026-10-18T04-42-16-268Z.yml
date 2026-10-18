@@ -1,0 +1,95 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "{ }"
+      - generic [ref=e6]: 코드교실 / PYTHON LAB
+    - generic [ref=e7]:
+      - generic [ref=e8]: 채점 엔진 준비 중
+      - generic [ref=e10]: 내 작업실
+      - generic "학생 프로필" [ref=e11]: 나
+  - generic [ref=e12]:
+    - complementary [ref=e13]:
+      - generic [ref=e14]: WORKSPACE
+      - button "⌘ 문제 풀이" [ref=e15] [cursor=pointer]:
+        - generic [ref=e16]: ⌘
+        - text: 문제 풀이
+      - button "▤ 문제 관리" [ref=e17] [cursor=pointer]:
+        - generic [ref=e18]: ▤
+        - text: 문제 관리
+      - generic [ref=e20]: 내 문제
+      - button "＋ 새 문제 만들기" [ref=e21] [cursor=pointer]
+      - generic [ref=e22]:
+        - strong [ref=e23]: 교육과정 안에서 안전하게
+        - text: 코드 실행 전 문법 범위를 확인하고, 파일·네트워크 접근 같은 위험한 기능은 제한합니다.
+    - main [ref=e24]:
+      - generic [ref=e25]: 내 작업실 / 파이썬 문제 풀이 / 두 수의 합
+      - generic [ref=e26]:
+        - generic [ref=e27]:
+          - heading "두 수의 합" [level=1] [ref=e28]
+          - paragraph [ref=e29]: 두 정수를 입력받아 합을 출력하는 프로그램을 작성해 보세요.
+        - generic [ref=e30]:
+          - generic [ref=e31]: 기초 과정
+          - generic [ref=e32]: 테스트 3개
+      - generic [ref=e33]:
+        - generic [ref=e35]:
+          - generic [ref=e36]:
+            - generic [ref=e37]:
+              - generic [ref=e38]: 문제 설명
+              - generic [ref=e39]: 아래 테스트 데이터를 모두 통과해 보세요
+            - generic [ref=e40]: 01 / BASIC
+          - generic [ref=e41]:
+            - heading "두 수의 합" [level=2] [ref=e42]
+            - paragraph [ref=e43]: 한 줄에 정수 두 개가 주어집니다. 두 수의 합을 출력하세요.
+            - generic [ref=e44]:
+              - generic [ref=e45]: 예시
+              - generic [ref=e46]:
+                - text: 입력 3 5
+                - text: 출력 8
+            - generic [ref=e48]:
+              - generic [ref=e49]: 테스트 데이터
+              - generic [ref=e50]: 입력값과 기대 출력값
+            - button "＋ 테스트 데이터 추가" [ref=e51] [cursor=pointer]
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - generic [ref=e55]:
+                - generic [ref=e56]: PY
+                - text: solution.py
+                - generic [ref=e57]: · 연결 중
+              - combobox "교육과정 단계" [ref=e59]:
+                - option "기초" [selected]
+                - option "중급"
+                - option "심화"
+            - generic [ref=e60]:
+              - generic [ref=e61]: "1"
+              - textbox "파이썬 코드 편집기" [ref=e62]
+            - generic [ref=e63]:
+              - generic [ref=e64]: Ln 1, Col 1
+              - generic [ref=e65]: Python 3 | UTF-8
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - text: 제출 전 교육과정 범위와
+              - text: 테스트 데이터를 함께 확인합니다.
+            - button "▶ 코드 실행 및 채점" [disabled] [ref=e68]:
+              - generic [ref=e69]: ▶
+              - text: 코드 실행 및 채점
+          - generic [ref=e70]:
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - generic [ref=e73]: 채점 결과
+                - generic [ref=e74]: 실행 후 테스트 결과가 표시됩니다
+              - generic [ref=e76]: — / —
+            - generic [ref=e77]:
+              - text: 코드를 작성한 뒤 실행 버튼을 눌러 주세요.
+              - text: 입력 데이터별 결과를 바로 확인할 수 있습니다.
+          - generic [ref=e79]:
+            - generic [ref=e80]:
+              - generic [ref=e81]:
+                - generic [ref=e82]: 교육과정 분석
+                - generic [ref=e83]: 선택한 단계의 문법만 사용 가능
+              - generic [ref=e84]: 분석 대기
+            - generic [ref=e85]:
+              - generic [ref=e86]: 실행할 때 Python 문법 트리를 검사해 범위 밖 문법과 위험한 기능을 차단합니다.
+              - generic [ref=e87]:
+                - generic [ref=e88]: ✓
+                - generic [ref=e89]: "기초 과정: 변수, 입출력, 연산, 조건문을 사용할 수 있어요."
