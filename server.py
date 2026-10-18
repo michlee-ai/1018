@@ -12,10 +12,37 @@ import unicodedata
 from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
 MAX_REQUEST_BYTES = 32_000
 DB_PATH = ROOT / "students.sqlite3"
+
+
+def load_project_env():
+    env_path = ROOT / ".env"
+    if not env_path.exists():
+        return
+    for line in env_path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        name, value = line.split("=", 1)
+        name = name.removeprefix("export ").strip()
+        value = value.strip().strip('"').strip("'")
+        if name and name not in os.environ:
+            os.environ[name] = value
+
+
+load_project_env()
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY", "")
+TEACHER_EMAILS = {
+    email.strip().casefold()
+    for email in os.environ.get("TEACHER_EMAILS", "").split(",")
+    if email.strip()
+}
 TEACHER_NAME = os.environ.get("TEACHER_NAME", "선생님").strip() or "선생님"
 TEACHER_PIN = os.environ.get("TEACHER_PIN", "2468")
 SAFE_CALLS = {
@@ -188,6 +215,8 @@ def initialize_database():
             """CREATE TABLE IF NOT EXISTS students (
                 id INTEGER PRIMARY KEY,
                 stable_key TEXT UNIQUE,
+                auth_uid TEXT UNIQUE,
+                email TEXT UNIQUE,
                 class_code TEXT NOT NULL,
                 display_name TEXT NOT NULL,
                 normalized_name TEXT NOT NULL,
@@ -200,6 +229,10 @@ def initialize_database():
         columns = {row[1] for row in connection.execute("PRAGMA table_info(students)")}
         if "stable_key" not in columns:
             connection.execute("ALTER TABLE students ADD COLUMN stable_key TEXT")
+        if "auth_uid" not in columns:
+            connection.execute("ALTER TABLE students ADD COLUMN auth_uid TEXT")
+        if "email" not in columns:
+            connection.execute("ALTER TABLE students ADD COLUMN email TEXT")
         for (student_id,) in connection.execute(
             "SELECT id FROM students WHERE stable_key IS NULL"
         ).fetchall():
@@ -209,6 +242,12 @@ def initialize_database():
             )
         connection.execute(
             "CREATE UNIQUE INDEX IF NOT EXISTS students_stable_key ON students(stable_key)"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS students_auth_uid ON students(auth_uid) WHERE auth_uid IS NOT NULL"
+        )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS students_email ON students(email) WHERE email IS NOT NULL"
         )
         connection.execute(
             """CREATE TABLE IF NOT EXISTS teachers (
@@ -365,6 +404,81 @@ def get_student(student_id):
     if not row:
         return None
     return {"id": row[0], "key": row[1], "name": row[2], "next_problem": row[3]}
+
+
+def verify_supabase_user(access_token):
+    if not SUPABASE_URL or not SUPABASE_ANON_KEY:
+        raise RuntimeError("Supabase 설정이 아직 완료되지 않았어요.")
+    if not isinstance(access_token, str) or len(access_token) > 12_000:
+        raise ValueError("로그인 세션을 확인할 수 없어요.")
+    request = Request(
+        f"{SUPABASE_URL}/auth/v1/user",
+        headers={
+            "apikey": SUPABASE_ANON_KEY,
+            "Authorization": f"Bearer {access_token}",
+        },
+    )
+    try:
+        with urlopen(request, timeout=8) as response:
+            user = json.loads(response.read())
+    except HTTPError as error:
+        if error.code in {401, 403}:
+            raise ValueError(
+                "Supabase 로그인 세션이 만료됐어요. 다시 로그인해 주세요."
+            ) from error
+        raise RuntimeError("Supabase 계정을 확인하지 못했어요.") from error
+    except (URLError, TimeoutError, json.JSONDecodeError) as error:
+        raise RuntimeError(
+            "Supabase에 연결하지 못했어요. 잠시 후 다시 시도해 주세요."
+        ) from error
+    if not user.get("id") or not user.get("email"):
+        raise ValueError("인증된 이메일 계정을 확인할 수 없어요.")
+    return user
+
+
+def supabase_student(user):
+    auth_uid = str(user["id"])
+    email = str(user["email"]).strip().casefold()
+    metadata = user.get("user_metadata") or {}
+    name = str(
+        metadata.get("display_name")
+        or metadata.get("full_name")
+        or metadata.get("name")
+        or email.split("@", 1)[0]
+    ).strip()[:32]
+    if not name:
+        name = "학생"
+    with database() as connection:
+        row = connection.execute(
+            "SELECT id FROM students WHERE auth_uid = ? OR email = ? LIMIT 1",
+            (auth_uid, email),
+        ).fetchone()
+        if row:
+            connection.execute(
+                "UPDATE students SET auth_uid = ?, email = ?, display_name = ? WHERE id = ?",
+                (auth_uid, email, name, row[0]),
+            )
+            student_id = row[0]
+        else:
+            stable_key = secrets.token_urlsafe(18)
+            salt = secrets.token_bytes(16)
+            unused_pin_hash = make_pin_hash(secrets.token_urlsafe(32), salt)
+            cursor = connection.execute(
+                """INSERT INTO students
+                   (stable_key, auth_uid, email, class_code, display_name, normalized_name, pin_salt, pin_hash)
+                   VALUES (?, ?, ?, 'MAIN', ?, ?, ?, ?)""",
+                (
+                    stable_key,
+                    auth_uid,
+                    email,
+                    name,
+                    f"supabase:{auth_uid}",
+                    salt,
+                    unused_pin_hash,
+                ),
+            )
+            student_id = cursor.lastrowid
+    return get_student(student_id)
 
 
 def get_teacher(teacher_id):
@@ -535,6 +649,7 @@ class Handler(BaseHTTPRequestHandler):
                 "grading": False,
                 "user_id": None,
                 "teacher_id": None,
+                "teacher": None,
                 "role": None,
             }
         return token
@@ -550,6 +665,7 @@ class Handler(BaseHTTPRequestHandler):
                 "grading": False,
                 "user_id": student["id"],
                 "teacher_id": None,
+                "teacher": None,
                 "role": "student",
             }
         return token
@@ -565,6 +681,7 @@ class Handler(BaseHTTPRequestHandler):
                 "grading": False,
                 "user_id": None,
                 "teacher_id": teacher["id"],
+                "teacher": teacher,
                 "role": "teacher",
             }
         return token
@@ -607,6 +724,18 @@ class Handler(BaseHTTPRequestHandler):
             self.end_headers()
             self.wfile.write(bridge)
             return
+        if self.path == "/api/config":
+            configured = bool(SUPABASE_URL and SUPABASE_ANON_KEY)
+            self.send_json(
+                200,
+                {
+                    "supabase_ready": configured,
+                    "supabase_url": SUPABASE_URL if configured else "",
+                    "supabase_anon_key": SUPABASE_ANON_KEY if configured else "",
+                    "teacher_configured": bool(TEACHER_EMAILS),
+                },
+            )
+            return
         if self.path == "/api/health":
             token = self.create_session()
             with SESSION_LOCK:
@@ -614,6 +743,7 @@ class Handler(BaseHTTPRequestHandler):
                 role = session["role"]
                 student_id = session["user_id"]
                 teacher_id = session["teacher_id"]
+                session_teacher = session.get("teacher")
             student = (
                 get_student(student_id) if role == "student" and student_id else None
             )
@@ -631,7 +761,7 @@ class Handler(BaseHTTPRequestHandler):
                     token,
                 )
             elif role == "teacher" and teacher_id:
-                teacher = get_teacher(teacher_id)
+                teacher = session_teacher or get_teacher(teacher_id)
                 self.send_json(
                     200,
                     {
@@ -646,7 +776,7 @@ class Handler(BaseHTTPRequestHandler):
                 data = {
                     "ready": True,
                     "authenticated": False,
-                    "teacher_name": TEACHER_NAME,
+                    "teacher_configured": bool(TEACHER_EMAILS),
                 }
                 self.send_json(200, data, token)
             return
@@ -718,6 +848,65 @@ class Handler(BaseHTTPRequestHandler):
             raise TypeError("요청 형식을 확인해 주세요.")
         return payload
 
+    def handle_supabase_auth(self):
+        try:
+            payload = self.read_json_body()
+            requested_role = payload.get("role", "student")
+            if requested_role not in {"student", "teacher"}:
+                raise ValueError("계정 종류를 확인해 주세요.")
+            authorization = self.headers.get("Authorization", "")
+            access_token = (
+                authorization[7:] if authorization.startswith("Bearer ") else ""
+            )
+            user = verify_supabase_user(access_token)
+            email = user["email"].strip().casefold()
+            is_teacher = email in TEACHER_EMAILS
+            if requested_role == "teacher" and not is_teacher:
+                if not TEACHER_EMAILS:
+                    raise ValueError(
+                        "교사 이메일 허용 목록이 아직 설정되지 않았어요. 운영자에게 문의해 주세요."
+                    )
+                raise ValueError("이 이메일은 교사 계정으로 등록되어 있지 않아요.")
+            if is_teacher:
+                metadata = user.get("user_metadata") or {}
+                teacher_name = str(
+                    metadata.get("display_name")
+                    or metadata.get("full_name")
+                    or metadata.get("name")
+                    or email.split("@", 1)[0]
+                ).strip()[:32]
+                account = {
+                    "id": user["id"],
+                    "name": teacher_name or "교사",
+                    "email": email,
+                }
+                token = self.bind_teacher_session(account)
+                self.send_json(
+                    200,
+                    {"role": "teacher", "teacher": account},
+                    token,
+                )
+                return
+            account = supabase_student(user)
+            if not account:
+                raise RuntimeError("학생 계정을 불러오지 못했어요.")
+            token = self.bind_student_session(account)
+            self.send_json(
+                200,
+                {
+                    "role": "student",
+                    "student": account,
+                    "next_problem": account["next_problem"],
+                },
+                token,
+            )
+        except ValueError as error:
+            self.send_json(400, {"error": str(error)})
+        except RuntimeError as error:
+            self.send_json(503, {"error": str(error)})
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            self.send_json(400, {"error": "로그인 정보를 확인해 주세요."})
+
     def handle_auth(self, action):
         try:
             payload = self.read_json_body()
@@ -747,14 +936,17 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": "입력한 정보를 확인해 주세요."})
 
     def do_POST(self):
+        if self.path == "/api/auth/supabase":
+            self.handle_supabase_auth()
+            return
         if self.path == "/api/auth/register":
-            self.handle_auth("register")
+            self.send_json(410, {"error": "이메일 가입을 사용해 주세요."})
             return
         if self.path == "/api/auth/login":
-            self.handle_auth("login")
+            self.send_json(410, {"error": "이메일 로그인을 사용해 주세요."})
             return
         if self.path == "/api/auth/teacher":
-            self.handle_auth("teacher")
+            self.send_json(410, {"error": "교사 이메일 로그인을 사용해 주세요."})
             return
         if self.path == "/api/auth/logout":
             token = self.get_session_token()
