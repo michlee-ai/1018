@@ -13,6 +13,7 @@ from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.error import HTTPError, URLError
+from urllib.parse import parse_qs, urlsplit
 from urllib.request import Request, urlopen
 
 ROOT = Path(__file__).resolve().parent
@@ -258,6 +259,23 @@ def initialize_database():
                 pin_hash BLOB NOT NULL
             )"""
         )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS classrooms (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                invite_code TEXT NOT NULL UNIQUE,
+                teacher_email TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS classroom_students (
+                classroom_id TEXT NOT NULL,
+                student_id INTEGER NOT NULL,
+                joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (classroom_id, student_id)
+            )"""
+        )
         if (
             len(TEACHER_PIN) != 4
             or not TEACHER_PIN.isascii()
@@ -500,6 +518,81 @@ def list_student_progress():
         {"name": name, "completed": min(next_problem - 1, len(TESTS))}
         for name, next_problem in rows
     ]
+
+
+def list_student_classes(student_id):
+    with database() as connection:
+        rows = connection.execute(
+            """SELECT c.id, c.name FROM classrooms c
+               JOIN classroom_students cs ON cs.classroom_id = c.id
+               WHERE cs.student_id = ? ORDER BY c.name""",
+            (student_id,),
+        ).fetchall()
+    return [{"id": row[0], "name": row[1]} for row in rows]
+
+
+def list_teacher_classes(teacher_email):
+    with database() as connection:
+        rows = connection.execute(
+            """SELECT c.id, c.name, c.invite_code, COUNT(cs.student_id)
+               FROM classrooms c LEFT JOIN classroom_students cs ON cs.classroom_id = c.id
+               WHERE c.teacher_email = ?
+               GROUP BY c.id ORDER BY c.created_at, c.name""",
+            (teacher_email.casefold(),),
+        ).fetchall()
+    return [
+        {"id": row[0], "name": row[1], "invite_code": row[2], "student_count": row[3]}
+        for row in rows
+    ]
+
+
+def create_classroom(teacher_email, name):
+    name = str(name).strip()
+    if not name or len(name) > 40:
+        raise ValueError("반 이름을 1~40자로 입력해 주세요.")
+    alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+    for _ in range(5):
+        classroom_id = secrets.token_urlsafe(12)
+        invite_code = "".join(secrets.choice(alphabet) for _ in range(8))
+        try:
+            with database() as connection:
+                connection.execute(
+                    "INSERT INTO classrooms (id, name, invite_code, teacher_email) VALUES (?, ?, ?, ?)",
+                    (classroom_id, name, invite_code, teacher_email.casefold()),
+                )
+            return {"id": classroom_id, "name": name, "invite_code": invite_code}
+        except sqlite3.IntegrityError:
+            continue
+    raise RuntimeError("초대 코드를 만들지 못했어요. 다시 시도해 주세요.")
+
+
+def teacher_class_overview(teacher_email, classroom_id=None):
+    classes = list_teacher_classes(teacher_email)
+    if not classroom_id:
+        classroom_id = classes[0]["id"] if classes else None
+    selected = next((item for item in classes if item["id"] == classroom_id), None)
+    if classroom_id and not selected:
+        raise ValueError("이 반을 관리할 권한이 없어요.")
+    students = []
+    if selected:
+        with database() as connection:
+            rows = connection.execute(
+                """SELECT s.display_name, s.next_problem
+                   FROM students s JOIN classroom_students cs ON cs.student_id = s.id
+                   WHERE cs.classroom_id = ? ORDER BY s.display_name""",
+                (classroom_id,),
+            ).fetchall()
+        students = [
+            {"name": name, "completed": min(next_problem - 1, len(TESTS))}
+            for name, next_problem in rows
+        ]
+    return {
+        "classes": classes,
+        "selected_class_id": classroom_id,
+        "students": students,
+        "student_count": len(students),
+        "completed_count": sum(item["completed"] == len(TESTS) for item in students),
+    }
 
 
 def save_student_progress(student_id, next_problem):
@@ -780,27 +873,40 @@ class Handler(BaseHTTPRequestHandler):
                 }
                 self.send_json(200, data, token)
             return
-        if self.path == "/api/teacher/overview":
+        if self.path == "/api/student/classes":
+            token = self.get_session_token()
+            if not token:
+                self.send_json(401, {"error": "학생 계정으로 로그인해 주세요."})
+                return
+            with SESSION_LOCK:
+                session = SESSIONS[token]
+                student_id = session["user_id"]
+                is_student = session["role"] == "student"
+            if not student_id or not is_student:
+                self.send_json(403, {"error": "학생 계정만 볼 수 있는 화면이에요."})
+                return
+            self.send_json(200, {"classes": list_student_classes(student_id)})
+            return
+        if urlsplit(self.path).path == "/api/teacher/overview":
             token = self.get_session_token()
             if not token:
                 self.send_json(401, {"error": "교사 계정으로 로그인해 주세요."})
                 return
             with SESSION_LOCK:
-                is_teacher = SESSIONS[token]["role"] == "teacher"
-            if not is_teacher:
+                session = SESSIONS[token]
+                teacher = session.get("teacher")
+                is_teacher = session["role"] == "teacher"
+            if not is_teacher or not teacher or not teacher.get("email"):
                 self.send_json(403, {"error": "교사 계정만 볼 수 있는 화면이에요."})
                 return
-            students = list_student_progress()
-            self.send_json(
-                200,
-                {
-                    "students": students,
-                    "student_count": len(students),
-                    "completed_count": sum(
-                        s["completed"] == len(TESTS) for s in students
-                    ),
-                },
-            )
+            query = parse_qs(urlsplit(self.path).query)
+            classroom_id = query.get("class_id", [None])[0]
+            try:
+                overview = teacher_class_overview(teacher["email"], classroom_id)
+            except ValueError as error:
+                self.send_json(403, {"error": str(error)})
+                return
+            self.send_json(200, overview)
             return
         if self.path.startswith("/api/solution/"):
             try:
@@ -936,6 +1042,63 @@ class Handler(BaseHTTPRequestHandler):
             self.send_json(400, {"error": "입력한 정보를 확인해 주세요."})
 
     def do_POST(self):
+        if self.path == "/api/teacher/classes":
+            token = self.get_session_token()
+            if not token:
+                self.send_json(401, {"error": "교사 계정으로 로그인해 주세요."})
+                return
+            with SESSION_LOCK:
+                session = SESSIONS[token]
+                teacher = session.get("teacher")
+                is_teacher = session["role"] == "teacher"
+            if not is_teacher or not teacher or not teacher.get("email"):
+                self.send_json(403, {"error": "교사 계정만 반을 만들 수 있어요."})
+                return
+            try:
+                payload = self.read_json_body()
+                new_class = create_classroom(teacher["email"], payload.get("name", ""))
+                classes = list_teacher_classes(teacher["email"])
+                self.send_json(201, {"classroom": new_class, "classes": classes})
+            except ValueError as error:
+                self.send_json(400, {"error": str(error)})
+            except (json.JSONDecodeError, TypeError):
+                self.send_json(400, {"error": "반 이름을 확인해 주세요."})
+            return
+        if self.path == "/api/student/classes/join":
+            token = self.get_session_token()
+            if not token:
+                self.send_json(401, {"error": "학생 계정으로 로그인해 주세요."})
+                return
+            with SESSION_LOCK:
+                session = SESSIONS[token]
+                student_id = session["user_id"]
+                is_student = session["role"] == "student"
+            if not student_id or not is_student:
+                self.send_json(403, {"error": "학생 계정만 반에 참여할 수 있어요."})
+                return
+            try:
+                payload = self.read_json_body()
+                invite_code = str(payload.get("invite_code", "")).strip().upper()
+                if not invite_code or len(invite_code) > 16:
+                    raise ValueError("반 초대 코드를 입력해 주세요.")
+                with database() as connection:
+                    row = connection.execute(
+                        "SELECT id FROM classrooms WHERE invite_code = ?",
+                        (invite_code,),
+                    ).fetchone()
+                    if not row:
+                        self.send_json(404, {"error": "초대 코드를 찾을 수 없어요."})
+                        return
+                    connection.execute(
+                        "INSERT OR IGNORE INTO classroom_students (classroom_id, student_id) VALUES (?, ?)",
+                        (row[0], student_id),
+                    )
+                self.send_json(200, {"classes": list_student_classes(student_id)})
+            except ValueError as error:
+                self.send_json(400, {"error": str(error)})
+            except (json.JSONDecodeError, TypeError):
+                self.send_json(400, {"error": "초대 코드를 확인해 주세요."})
+            return
         if self.path == "/api/auth/supabase":
             self.handle_supabase_auth()
             return
