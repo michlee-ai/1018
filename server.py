@@ -187,6 +187,7 @@ def initialize_database():
         connection.execute(
             """CREATE TABLE IF NOT EXISTS students (
                 id INTEGER PRIMARY KEY,
+                stable_key TEXT UNIQUE,
                 class_code TEXT NOT NULL,
                 display_name TEXT NOT NULL,
                 normalized_name TEXT NOT NULL,
@@ -195,6 +196,19 @@ def initialize_database():
                 next_problem INTEGER NOT NULL DEFAULT 1,
                 UNIQUE(class_code, normalized_name)
             )"""
+        )
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(students)")}
+        if "stable_key" not in columns:
+            connection.execute("ALTER TABLE students ADD COLUMN stable_key TEXT")
+        for (student_id,) in connection.execute(
+            "SELECT id FROM students WHERE stable_key IS NULL"
+        ).fetchall():
+            connection.execute(
+                "UPDATE students SET stable_key = ? WHERE id = ?",
+                (secrets.token_urlsafe(18), student_id),
+            )
+        connection.execute(
+            "CREATE UNIQUE INDEX IF NOT EXISTS students_stable_key ON students(stable_key)"
         )
         connection.execute(
             """CREATE TABLE IF NOT EXISTS teachers (
@@ -246,6 +260,7 @@ def make_pin_hash(pin, salt):
 
 def create_student(payload):
     name, normalized_name, pin = validate_auth_fields(payload)
+    stable_key = secrets.token_urlsafe(18)
     salt = secrets.token_bytes(16)
     pin_hash = make_pin_hash(pin, salt)
     try:
@@ -259,15 +274,15 @@ def create_student(payload):
                     "이미 등록된 이름이에요. 로그인하거나 별명을 사용해 주세요."
                 )
             cursor = connection.execute(
-                "INSERT INTO students (class_code, display_name, normalized_name, pin_salt, pin_hash) VALUES (?, ?, ?, ?, ?)",
-                ("MAIN", name, normalized_name, salt, pin_hash),
+                "INSERT INTO students (stable_key, class_code, display_name, normalized_name, pin_salt, pin_hash) VALUES (?, ?, ?, ?, ?, ?)",
+                (stable_key, "MAIN", name, normalized_name, salt, pin_hash),
             )
             student_id = cursor.lastrowid
     except sqlite3.IntegrityError as error:
         raise ValueError(
             "이미 등록된 이름이에요. 별명을 쓰거나 로그인해 주세요."
         ) from error
-    return {"id": student_id, "name": name, "next_problem": 1}
+    return {"id": student_id, "key": stable_key, "name": name, "next_problem": 1}
 
 
 def login_student(payload):
@@ -283,13 +298,13 @@ def login_student(payload):
             )
     with database() as connection:
         rows = connection.execute(
-            "SELECT id, display_name, pin_salt, pin_hash, next_problem FROM students WHERE normalized_name = ?",
+            "SELECT id, stable_key, display_name, pin_salt, pin_hash, next_problem FROM students WHERE normalized_name = ?",
             (normalized_name,),
         ).fetchall()
     matches = []
     for row in rows:
-        candidate = make_pin_hash(pin, row[2])
-        if secrets.compare_digest(candidate, row[3]):
+        candidate = make_pin_hash(pin, row[3])
+        if secrets.compare_digest(candidate, row[4]):
             matches.append(row)
     if not rows:
         make_pin_hash(pin, b"codeclass-dummy-salt")
@@ -302,7 +317,12 @@ def login_student(payload):
     with AUTH_LOCK:
         AUTH_FAILURES.pop(key, None)
     row = matches[0]
-    return {"id": row[0], "name": row[1], "next_problem": row[4]}
+    return {
+        "id": row[0],
+        "key": row[1],
+        "name": row[2],
+        "next_problem": row[5],
+    }
 
 
 def login_teacher(payload):
@@ -339,12 +359,12 @@ def login_teacher(payload):
 def get_student(student_id):
     with database() as connection:
         row = connection.execute(
-            "SELECT id, display_name, next_problem FROM students WHERE id = ?",
+            "SELECT id, stable_key, display_name, next_problem FROM students WHERE id = ?",
             (student_id,),
         ).fetchone()
     if not row:
         return None
-    return {"id": row[0], "name": row[1], "next_problem": row[2]}
+    return {"id": row[0], "key": row[1], "name": row[2], "next_problem": row[3]}
 
 
 def get_teacher(teacher_id):

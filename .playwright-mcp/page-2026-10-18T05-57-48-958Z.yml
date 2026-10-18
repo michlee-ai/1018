@@ -1,0 +1,131 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: "{ }"
+      - generic [ref=e5]: 코드교실 / MIDDLE SCHOOL PYTHON
+    - generic [ref=e6]:
+      - generic [ref=e9]: 채점 서버 연결 완료
+      - generic [ref=e10]: 0 / 10 완료
+      - generic [ref=e11]: 힌트시작65
+      - generic "힌트시작65" [ref=e12]: 힌
+      - button "로그아웃" [ref=e13] [cursor=pointer]
+  - generic [ref=e14]:
+    - complementary [ref=e15]:
+      - generic [ref=e16]: PYTHON STARTER COURSE
+      - generic [ref=e17]: 중학 파이썬 첫걸음
+      - paragraph [ref=e18]: 문제를 읽고 직접 코드를 작성해 보세요. 정답을 맞히면 다음 단계가 열려요.
+      - generic [ref=e20]:
+        - generic [ref=e21]: 코스 진행률
+        - strong [ref=e22]: 0 / 10
+      - generic [ref=e24]: 오늘의 도전
+      - generic "문제 진행 상황" [ref=e25]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: "01"
+          - generic [ref=e28]: 두 수를 더해요
+        - generic [ref=e29]:
+          - generic [ref=e30]: "02"
+          - generic [ref=e31]: 직사각형의 넓이
+        - generic [ref=e32]:
+          - generic [ref=e33]: "03"
+          - generic [ref=e34]: 세 수 중 가장 큰 수
+        - generic [ref=e35]:
+          - generic [ref=e36]: "04"
+          - generic [ref=e37]: 짝수는 몇 개일까요?
+        - generic [ref=e38]:
+          - generic [ref=e39]: "05"
+          - generic [ref=e40]: 1부터 N까지 더하기
+        - generic [ref=e41]:
+          - generic [ref=e42]: "06"
+          - generic [ref=e43]: 구구단 한 단 출력하기
+        - generic [ref=e44]:
+          - generic [ref=e45]: "07"
+          - generic [ref=e46]: 숫자의 각 자리 더하기
+        - generic [ref=e47]:
+          - generic [ref=e48]: "08"
+          - generic [ref=e49]: 단어의 글자 수
+        - generic [ref=e50]:
+          - generic [ref=e51]: "09"
+          - generic [ref=e52]: 숫자를 거꾸로 뒤집기
+        - generic [ref=e53]:
+          - generic [ref=e54]: "10"
+          - generic [ref=e55]: 별 계단 만들기
+      - generic [ref=e56]:
+        - text: 차근차근 풀어 봐요
+        - text: 각 문제에는 화면에 표시되지 않는 추가 테스트도 있어요. 예시만 맞히는 것보다 다양한 경우를 생각해 보세요.
+    - main [ref=e57]:
+      - generic [ref=e58]: 학습 코스 / 중학 파이썬 첫걸음
+      - generic [ref=e59]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: PROBLEM 01 / 10
+          - heading "두 수를 더해요" [level=1] [ref=e62]
+          - paragraph [ref=e63]: 입력과 출력부터 차근차근 시작해 봅시다.
+        - generic [ref=e64]: 기초 문법
+      - generic [ref=e65]:
+        - region "문제" [ref=e66]:
+          - generic [ref=e67]:
+            - generic [ref=e68]:
+              - generic [ref=e69]: 문제
+              - generic [ref=e70]: 문장을 읽고 조건에 맞는 프로그램을 작성하세요
+            - generic [ref=e71]: "01"
+          - generic [ref=e72]:
+            - paragraph [ref=e73]: 정수 두 개가 한 줄에 주어집니다. 두 수를 더한 값을 출력하는 프로그램을 작성하세요.
+            - generic [ref=e74]:
+              - generic [ref=e75]: 예시
+              - generic [ref=e76]:
+                - generic [ref=e77]:
+                  - generic [ref=e78]: 입력
+                  - code [ref=e79]: 3 5
+                - generic [ref=e80]:
+                  - generic [ref=e81]: 출력
+                  - code [ref=e82]: "8"
+            - generic [ref=e83]:
+              - heading "입력과 출력" [level=2] [ref=e84]
+              - paragraph [ref=e85]: 첫째 줄에 정수 두 개가 공백으로 구분되어 주어집니다. 두 수의 합을 한 줄에 출력합니다.
+            - generic [ref=e86]:
+              - generic [ref=e87]: "*"
+              - generic [ref=e88]: 채점에는 예시 외 비공개 테스트도 사용됩니다.
+        - generic [ref=e89]:
+          - region "파이썬 코드 입력" [ref=e90]:
+            - generic [ref=e91]:
+              - generic [ref=e92]:
+                - generic [ref=e93]: PY
+                - text: solution.py
+              - generic [ref=e94]: · 준비 완료
+            - generic [ref=e95]:
+              - generic [ref=e96]: "1"
+              - textbox "파이썬 코드 입력창" [ref=e97]:
+                - /placeholder: "# 여기에 파이썬 코드를 작성하세요"
+                - text: print(0)
+            - generic [ref=e98]:
+              - generic [ref=e99]: Ln 1, Col 9
+              - generic [ref=e100]: Python 3
+          - generic [ref=e101]:
+            - generic [ref=e102]: 제출하면 비공개 테스트케이스로 자동 채점합니다.
+            - generic [ref=e103]:
+              - button "모범 답안" [ref=e104] [cursor=pointer]
+              - button "▶ 제출하기" [ref=e105] [cursor=pointer]:
+                - generic [ref=e106]: ▶
+                - text: 제출하기
+          - region "채점 결과" [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]:
+                - generic [ref=e110]: 채점 결과
+                - generic [ref=e111]: 코드를 실행하면 결과를 확인할 수 있어요
+              - generic [ref=e112]: —
+            - generic [ref=e113]: 예시 입력을 먼저 확인하고 코드를 작성해 보세요.
+          - generic [ref=e115]:
+            - generic [ref=e117]:
+              - generic [ref=e118]: CONTEXTUAL TUTOR
+              - heading "필요한 도움만 골라 보세요" [level=3] [ref=e119]
+            - article [ref=e121]:
+              - generic [ref=e122]:
+                - generic [ref=e123]: 문제 코치
+                - heading "막막하면 첫 힌트부터" [level=4] [ref=e124]
+              - paragraph [ref=e125]: 처음부터 이용할 수 있어요. 정답 코드는 주지 않고, 원할 때 한 단계씩 단서를 엽니다.
+              - button "단서 접기" [ref=e126] [cursor=pointer]
+              - generic [ref=e127]:
+                - generic [ref=e128]: 입력 한 줄을 값 두 개로 나누는 부분을 살펴봐요.
+                - generic [ref=e129]: 계산하기 전에 입력된 두 값이 숫자 자료형인지 확인해 보세요.
+          - generic [ref=e130]:
+            - button "← 이전 문제" [disabled] [ref=e131]
+            - button "다음 문제 →" [disabled] [ref=e132]
