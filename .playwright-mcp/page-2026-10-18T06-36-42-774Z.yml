@@ -1,0 +1,31 @@
+- region "학생 계정 만들기" [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "{ }"
+      - generic [ref=e6]: 코드교실
+    - generic [ref=e7]: MIDDLE SCHOOL PYTHON
+    - tablist "계정 종류" [ref=e8]:
+      - tab "학생" [selected] [ref=e9] [cursor=pointer]
+      - tab "교사" [ref=e10] [cursor=pointer]
+    - heading "학생 계정 만들기" [level=1] [ref=e11]
+    - paragraph [ref=e12]: 이름, 이메일, 비밀번호로 계정을 만들어요. 가입 후 이메일 확인이 필요할 수 있습니다.
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: 학생 이름 또는 별명
+        - textbox "학생 이름 또는 별명" [ref=e16]:
+          - /placeholder: "예: 민지"
+      - generic [ref=e17]:
+        - generic [ref=e18]: 이메일
+        - textbox "이메일" [ref=e19]:
+          - /placeholder: name@example.com
+      - generic [ref=e20]:
+        - generic [ref=e21]: 비밀번호
+        - textbox "비밀번호" [ref=e22]:
+          - /placeholder: 8자 이상
+      - status [ref=e23]
+      - button "가입하기" [ref=e24] [cursor=pointer]
+    - button "이미 계정이 있나요? 로그인" [ref=e25] [cursor=pointer]
+    - generic [ref=e26]:
+      - strong [ref=e27]: 학생 계정
+      - text: 이메일 확인 설정에 따라 확인 링크를 눌러야 로그인할 수 있어요.
+    - paragraph [ref=e28]: 비밀번호와 이메일 인증은 Supabase Auth에서 관리합니다.
