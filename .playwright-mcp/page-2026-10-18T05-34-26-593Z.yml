@@ -1,0 +1,27 @@
+- region "우리 반 코스로 들어와요" [ref=e2]:
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]: "{ }"
+      - generic [ref=e6]: 코드교실
+    - generic [ref=e7]: MIDDLE SCHOOL PYTHON
+    - tablist "계정 종류" [ref=e8]:
+      - tab "학생" [selected] [ref=e9] [cursor=pointer]
+      - tab "교사" [ref=e10] [cursor=pointer]
+    - heading "우리 반 코스로 들어와요" [level=1] [ref=e11]
+    - paragraph [ref=e12]: 이름과 4자리 PIN으로 계정을 만들어요. 로그인하면 문제와 제출 버튼이 보여요.
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: 학생 이름 또는 별명
+        - textbox "학생 이름 또는 별명" [ref=e16]:
+          - /placeholder: "예: 민지"
+      - generic [ref=e17]:
+        - generic [ref=e18]: 4자리 PIN
+        - textbox "4자리 PIN" [ref=e19]:
+          - /placeholder: ● ● ● ●
+      - status [ref=e20]
+      - button "계정 만들고 시작하기" [ref=e21] [cursor=pointer]
+    - button "이미 등록했나요? 로그인" [ref=e22] [cursor=pointer]
+    - generic [ref=e23]:
+      - strong [ref=e24]: 학생 계정
+      - text: 학급 코드 없이 이름과 PIN으로 가입할 수 있어요.
+    - paragraph [ref=e25]: PIN은 안전하게 변환해 저장합니다. 이름이 겹치면 별명을 사용해 주세요.

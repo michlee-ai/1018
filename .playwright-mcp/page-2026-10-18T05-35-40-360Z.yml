@@ -1,0 +1,38 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]: "{ }"
+      - generic [ref=e33]: 코드교실 / MIDDLE SCHOOL PYTHON
+    - generic [ref=e34]:
+      - generic [ref=e37]: 교사 계정
+      - generic [ref=e39]: 선생님
+      - generic "선생님" [ref=e151]: 선
+      - button "로그아웃" [ref=e41] [cursor=pointer]
+  - main [ref=e152]:
+    - generic [ref=e153]:
+      - generic [ref=e154]:
+        - generic [ref=e155]: TEACHER WORKSPACE
+        - heading "학생 풀이 현황" [level=1] [ref=e156]
+        - paragraph [ref=e157]: 학생별로 몇 문제를 풀었는지 확인할 수 있어요. PIN과 코드는 표시되지 않습니다.
+      - generic [ref=e158]: 교사 전용
+    - generic [ref=e159]:
+      - generic [ref=e160]:
+        - generic [ref=e161]: 등록 학생
+        - strong [ref=e162]: "3"
+      - generic [ref=e163]:
+        - generic [ref=e164]: 코스 완주
+        - strong [ref=e165]: "0"
+    - generic [ref=e166]:
+      - generic [ref=e167]:
+        - heading "학생 목록" [level=2] [ref=e168]
+        - generic [ref=e169]: 전체 10문제
+      - generic [ref=e170]:
+        - generic [ref=e171]:
+          - generic [ref=e172]: 개나리
+          - generic [ref=e174]: 0 / 10
+        - generic [ref=e175]:
+          - generic [ref=e176]: 나리
+          - generic [ref=e179]: 3 / 10
+        - generic [ref=e180]:
+          - generic [ref=e181]: 로그인검증32
+          - generic [ref=e184]: 1 / 10

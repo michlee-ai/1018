@@ -9,19 +9,15 @@ import sys
 import threading
 import time
 import unicodedata
-from http.cookies import SimpleCookie
+from http.cookies import CookieError, SimpleCookie
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-
 
 ROOT = Path(__file__).resolve().parent
 MAX_REQUEST_BYTES = 32_000
 DB_PATH = ROOT / "students.sqlite3"
-CLASS_CODES = {
-    value.strip().upper()
-    for value in os.environ.get("CLASS_CODES", "PYTHON-01").split(",")
-    if value.strip()
-} or {"PYTHON-01"}
+TEACHER_NAME = os.environ.get("TEACHER_NAME", "선생님").strip() or "선생님"
+TEACHER_PIN = os.environ.get("TEACHER_PIN", "2468")
 SAFE_CALLS = {
     "print",
     "input",
@@ -40,12 +36,52 @@ SAFE_CALLS = {
     "list",
     "range",
 }
-COMMON_NODES = set(
-    "Module Assign Name Load Store Constant Expr Call BinOp UnaryOp Compare BoolOp "
-    "If IfExp AugAssign Tuple List Subscript Slice Attribute keyword Pass Add Sub "
-    "Mult Div FloorDiv Mod Pow UAdd USub Not Eq NotEq Lt LtE Gt GtE Is IsNot "
-    "In NotIn And Or".split()
-)
+COMMON_NODES = {
+    "Module",
+    "Assign",
+    "Name",
+    "Load",
+    "Store",
+    "Constant",
+    "Expr",
+    "Call",
+    "BinOp",
+    "UnaryOp",
+    "Compare",
+    "BoolOp",
+    "If",
+    "IfExp",
+    "AugAssign",
+    "Tuple",
+    "List",
+    "Subscript",
+    "Slice",
+    "Attribute",
+    "keyword",
+    "Pass",
+    "Add",
+    "Sub",
+    "Mult",
+    "Div",
+    "FloorDiv",
+    "Mod",
+    "Pow",
+    "UAdd",
+    "USub",
+    "Not",
+    "Eq",
+    "NotEq",
+    "Lt",
+    "LtE",
+    "Gt",
+    "GtE",
+    "Is",
+    "IsNot",
+    "In",
+    "NotIn",
+    "And",
+    "Or",
+}
 COURSE_NODES = {
     "basic": COMMON_NODES,
     "intermediate": COMMON_NODES | {"For", "Break", "Continue"},
@@ -148,6 +184,33 @@ def initialize_database():
                 UNIQUE(class_code, normalized_name)
             )"""
         )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS teachers (
+                id INTEGER PRIMARY KEY,
+                display_name TEXT NOT NULL,
+                normalized_name TEXT NOT NULL UNIQUE,
+                pin_salt BLOB NOT NULL,
+                pin_hash BLOB NOT NULL
+            )"""
+        )
+        if (
+            len(TEACHER_PIN) != 4
+            or not TEACHER_PIN.isascii()
+            or not TEACHER_PIN.isdigit()
+        ):
+            raise ValueError("TEACHER_PIN must be exactly four digits")
+        salt = secrets.token_bytes(16)
+        pin_hash = make_pin_hash(TEACHER_PIN, salt)
+        connection.execute(
+            """INSERT INTO teachers (id, display_name, normalized_name, pin_salt, pin_hash)
+               VALUES (1, ?, ?, ?, ?)
+               ON CONFLICT(id) DO UPDATE SET
+                   display_name = excluded.display_name,
+                   normalized_name = excluded.normalized_name,
+                   pin_salt = excluded.pin_salt,
+                   pin_hash = excluded.pin_hash""",
+            (TEACHER_NAME, normalize_name(TEACHER_NAME), salt, pin_hash),
+        )
 
 
 def normalize_name(name):
@@ -155,17 +218,14 @@ def normalize_name(name):
 
 
 def validate_auth_fields(payload):
-    class_code = str(payload.get("class_code", "")).strip().upper()
     name = str(payload.get("name", "")).strip()
     normalized_name = normalize_name(name)
     pin = str(payload.get("pin", ""))
-    if class_code not in CLASS_CODES:
-        raise ValueError("학급 코드를 확인해 주세요.")
     if not name or len(name) > 32 or not normalized_name:
-        raise ValueError("학생 이름을 1~32자로 입력해 주세요.")
+        raise ValueError("이름을 1~32자로 입력해 주세요.")
     if len(pin) != 4 or not pin.isascii() or not pin.isdigit():
         raise ValueError("PIN은 숫자 4자리로 입력해 주세요.")
-    return class_code, name, normalized_name, pin
+    return name, normalized_name, pin
 
 
 def make_pin_hash(pin, salt):
@@ -173,26 +233,69 @@ def make_pin_hash(pin, salt):
 
 
 def create_student(payload):
-    class_code, name, normalized_name, pin = validate_auth_fields(payload)
+    name, normalized_name, pin = validate_auth_fields(payload)
     salt = secrets.token_bytes(16)
     pin_hash = make_pin_hash(pin, salt)
     try:
         with database() as connection:
+            existing = connection.execute(
+                "SELECT 1 FROM students WHERE normalized_name = ? LIMIT 1",
+                (normalized_name,),
+            ).fetchone()
+            if existing:
+                raise ValueError(
+                    "이미 등록된 이름이에요. 로그인하거나 별명을 사용해 주세요."
+                )
             cursor = connection.execute(
                 "INSERT INTO students (class_code, display_name, normalized_name, pin_salt, pin_hash) VALUES (?, ?, ?, ?, ?)",
-                (class_code, name, normalized_name, salt, pin_hash),
+                ("MAIN", name, normalized_name, salt, pin_hash),
             )
             student_id = cursor.lastrowid
     except sqlite3.IntegrityError as error:
         raise ValueError(
-            "이 학급에 이미 등록된 이름이에요. 로그인해 주세요."
+            "이미 등록된 이름이에요. 별명을 쓰거나 로그인해 주세요."
         ) from error
-    return {"id": student_id, "name": name, "class_code": class_code, "next_problem": 1}
+    return {"id": student_id, "name": name, "next_problem": 1}
 
 
 def login_student(payload):
-    class_code, name, normalized_name, pin = validate_auth_fields(payload)
-    key = (class_code, normalized_name)
+    _, normalized_name, pin = validate_auth_fields(payload)
+    key = ("student", normalized_name)
+    now = time.time()
+    with AUTH_LOCK:
+        failures = [stamp for stamp in AUTH_FAILURES.get(key, []) if now - stamp < 900]
+        AUTH_FAILURES[key] = failures
+        if len(failures) >= 5:
+            raise AuthRateLimitError(
+                "PIN을 여러 번 틀렸어요. 15분 뒤에 다시 시도해 주세요."
+            )
+    with database() as connection:
+        rows = connection.execute(
+            "SELECT id, display_name, pin_salt, pin_hash, next_problem FROM students WHERE normalized_name = ?",
+            (normalized_name,),
+        ).fetchall()
+    matches = []
+    for row in rows:
+        candidate = make_pin_hash(pin, row[2])
+        if secrets.compare_digest(candidate, row[3]):
+            matches.append(row)
+    if not rows:
+        make_pin_hash(pin, b"codeclass-dummy-salt")
+    if len(matches) > 1:
+        raise ValueError("같은 이름의 계정이 있어요. 별명으로 다시 등록해 주세요.")
+    if not matches:
+        with AUTH_LOCK:
+            AUTH_FAILURES.setdefault(key, []).append(now)
+        raise ValueError("이름 또는 PIN이 맞지 않아요.")
+    with AUTH_LOCK:
+        AUTH_FAILURES.pop(key, None)
+    row = matches[0]
+    return {"id": row[0], "name": row[1], "next_problem": row[4]}
+
+
+def login_teacher(payload):
+    _, normalized_name, pin = validate_auth_fields(payload)
+    key = ("teacher", normalized_name)
     now = time.time()
     with AUTH_LOCK:
         failures = [stamp for stamp in AUTH_FAILURES.get(key, []) if now - stamp < 900]
@@ -203,8 +306,8 @@ def login_student(payload):
             )
     with database() as connection:
         row = connection.execute(
-            "SELECT id, display_name, pin_salt, pin_hash, next_problem FROM students WHERE class_code = ? AND normalized_name = ?",
-            (class_code, normalized_name),
+            "SELECT id, display_name, pin_salt, pin_hash FROM teachers WHERE normalized_name = ?",
+            (normalized_name,),
         ).fetchone()
     if row:
         candidate = make_pin_hash(pin, row[2])
@@ -215,26 +318,42 @@ def login_student(payload):
     if not valid:
         with AUTH_LOCK:
             AUTH_FAILURES.setdefault(key, []).append(now)
-        raise ValueError("이름 또는 PIN이 맞지 않아요.")
+        raise ValueError("교사 이름 또는 PIN이 맞지 않아요.")
     with AUTH_LOCK:
         AUTH_FAILURES.pop(key, None)
-    return {
-        "id": row[0],
-        "name": row[1],
-        "class_code": class_code,
-        "next_problem": row[4],
-    }
+    return {"id": row[0], "name": row[1]}
 
 
 def get_student(student_id):
     with database() as connection:
         row = connection.execute(
-            "SELECT id, display_name, class_code, next_problem FROM students WHERE id = ?",
+            "SELECT id, display_name, next_problem FROM students WHERE id = ?",
             (student_id,),
         ).fetchone()
     if not row:
         return None
-    return {"id": row[0], "name": row[1], "class_code": row[2], "next_problem": row[3]}
+    return {"id": row[0], "name": row[1], "next_problem": row[2]}
+
+
+def get_teacher(teacher_id):
+    with database() as connection:
+        row = connection.execute(
+            "SELECT id, display_name FROM teachers WHERE id = ?", (teacher_id,)
+        ).fetchone()
+    if not row:
+        return None
+    return {"id": row[0], "name": row[1]}
+
+
+def list_student_progress():
+    with database() as connection:
+        rows = connection.execute(
+            "SELECT display_name, next_problem FROM students ORDER BY normalized_name"
+        ).fetchall()
+    return [
+        {"name": name, "completed": min(next_problem - 1, len(TESTS))}
+        for name, next_problem in rows
+    ]
 
 
 def save_student_progress(student_id, next_problem):
@@ -357,7 +476,7 @@ class Handler(BaseHTTPRequestHandler):
         cookie = SimpleCookie()
         try:
             cookie.load(self.headers.get("Cookie", ""))
-        except Exception:
+        except (CookieError, TypeError, ValueError):
             return None
         morsel = cookie.get("course_session")
         token = morsel.value if morsel else None
@@ -370,7 +489,13 @@ class Handler(BaseHTTPRequestHandler):
             return token
         token = secrets.token_urlsafe(24)
         with SESSION_LOCK:
-            SESSIONS[token] = {"next_problem": 1, "grading": False, "user_id": None}
+            SESSIONS[token] = {
+                "next_problem": 1,
+                "grading": False,
+                "user_id": None,
+                "teacher_id": None,
+                "role": None,
+            }
         return token
 
     def bind_student_session(self, student):
@@ -383,6 +508,23 @@ class Handler(BaseHTTPRequestHandler):
                 "next_problem": student["next_problem"],
                 "grading": False,
                 "user_id": student["id"],
+                "teacher_id": None,
+                "role": "student",
+            }
+        return token
+
+    def bind_teacher_session(self, teacher):
+        old_token = self.get_session_token()
+        token = secrets.token_urlsafe(24)
+        with SESSION_LOCK:
+            if old_token:
+                SESSIONS.pop(old_token, None)
+            SESSIONS[token] = {
+                "next_problem": 1,
+                "grading": False,
+                "user_id": None,
+                "teacher_id": teacher["id"],
+                "role": "teacher",
             }
         return token
 
@@ -427,8 +569,13 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/api/health":
             token = self.create_session()
             with SESSION_LOCK:
-                student_id = SESSIONS[token]["user_id"]
-            student = get_student(student_id) if student_id else None
+                session = SESSIONS[token]
+                role = session["role"]
+                student_id = session["user_id"]
+                teacher_id = session["teacher_id"]
+            student = (
+                get_student(student_id) if role == "student" and student_id else None
+            )
             if student:
                 with SESSION_LOCK:
                     SESSIONS[token]["next_problem"] = student["next_problem"]
@@ -442,16 +589,47 @@ class Handler(BaseHTTPRequestHandler):
                     },
                     token,
                 )
-            else:
+            elif role == "teacher" and teacher_id:
+                teacher = get_teacher(teacher_id)
                 self.send_json(
                     200,
                     {
                         "ready": True,
-                        "authenticated": False,
-                        "demo_class_code": sorted(CLASS_CODES)[0],
+                        "authenticated": True,
+                        "role": "teacher",
+                        "teacher": teacher,
                     },
                     token,
                 )
+            else:
+                data = {
+                    "ready": True,
+                    "authenticated": False,
+                    "teacher_name": TEACHER_NAME,
+                }
+                self.send_json(200, data, token)
+            return
+        if self.path == "/api/teacher/overview":
+            token = self.get_session_token()
+            if not token:
+                self.send_json(401, {"error": "교사 계정으로 로그인해 주세요."})
+                return
+            with SESSION_LOCK:
+                is_teacher = SESSIONS[token]["role"] == "teacher"
+            if not is_teacher:
+                self.send_json(403, {"error": "교사 계정만 볼 수 있는 화면이에요."})
+                return
+            students = list_student_progress()
+            self.send_json(
+                200,
+                {
+                    "students": students,
+                    "student_count": len(students),
+                    "completed_count": sum(
+                        s["completed"] == len(TESTS) for s in students
+                    ),
+                },
+            )
             return
         if self.path.startswith("/api/solution/"):
             try:
@@ -466,8 +644,9 @@ class Handler(BaseHTTPRequestHandler):
             with SESSION_LOCK:
                 session = SESSIONS[token]
                 student_id = session["user_id"]
+                is_student = session["role"] == "student"
                 next_problem = session["next_problem"]
-            if not student_id:
+            if not student_id or not is_student:
                 self.send_json(401, {"error": "먼저 로그인해 주세요."})
                 return
             if problem_id not in SOLUTIONS:
@@ -495,21 +674,28 @@ class Handler(BaseHTTPRequestHandler):
             raise ValueError("요청 크기가 올바르지 않아요.")
         payload = json.loads(self.rfile.read(length))
         if not isinstance(payload, dict):
-            raise ValueError("요청 형식을 확인해 주세요.")
+            raise TypeError("요청 형식을 확인해 주세요.")
         return payload
 
     def handle_auth(self, action):
         try:
             payload = self.read_json_body()
-            student = (
-                create_student(payload)
-                if action == "register"
-                else login_student(payload)
-            )
-            token = self.bind_student_session(student)
+            if action == "register":
+                account = create_student(payload)
+                token = self.bind_student_session(account)
+            elif action == "teacher":
+                account = login_teacher(payload)
+                token = self.bind_teacher_session(account)
+            else:
+                account = login_student(payload)
+                token = self.bind_student_session(account)
             self.send_json(
                 201 if action == "register" else 200,
-                {"student": student, "next_problem": student["next_problem"]},
+                {
+                    "role": "teacher" if action == "teacher" else "student",
+                    "student" if action != "teacher" else "teacher": account,
+                    "next_problem": account.get("next_problem", 1),
+                },
                 token,
             )
         except AuthRateLimitError as error:
@@ -525,6 +711,9 @@ class Handler(BaseHTTPRequestHandler):
             return
         if self.path == "/api/auth/login":
             self.handle_auth("login")
+            return
+        if self.path == "/api/auth/teacher":
+            self.handle_auth("teacher")
             return
         if self.path == "/api/auth/logout":
             token = self.get_session_token()
@@ -545,8 +734,9 @@ class Handler(BaseHTTPRequestHandler):
         with SESSION_LOCK:
             session = SESSIONS[token]
             student_id = session["user_id"]
-        if not student_id:
-            self.send_json(401, {"error": "먼저 학급 계정으로 로그인해 주세요."})
+            is_student = session["role"] == "student"
+        if not student_id or not is_student:
+            self.send_json(401, {"error": "학생 계정으로 로그인해 주세요."})
             return
         grading_started = False
         try:
@@ -600,7 +790,7 @@ class Handler(BaseHTTPRequestHandler):
             if grading_started:
                 self.clear_grading(token)
             return
-        except Exception:
+        except Exception:  # noqa: BLE001 - keep grader failures from leaking details
             if grading_started:
                 self.clear_grading(token)
             self.send_json(

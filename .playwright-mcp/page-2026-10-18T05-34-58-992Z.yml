@@ -1,0 +1,117 @@
+- generic [active] [ref=e1]:
+  - banner [ref=e30]:
+    - generic [ref=e31]:
+      - generic [ref=e32]: "{ }"
+      - generic [ref=e33]: 코드교실 / MIDDLE SCHOOL PYTHON
+    - generic [ref=e34]:
+      - generic [ref=e37]: 채점 서버 연결 완료
+      - generic [ref=e38]: 1 / 10 완료
+      - generic [ref=e39]: 로그인검증32
+      - generic "로그인검증32" [ref=e40]: 로
+      - button "로그아웃" [ref=e41] [cursor=pointer]
+  - generic [ref=e42]:
+    - complementary [ref=e43]:
+      - generic [ref=e44]: PYTHON STARTER COURSE
+      - generic [ref=e45]: 중학 파이썬 첫걸음
+      - paragraph [ref=e46]: 문제를 읽고 직접 코드를 작성해 보세요. 정답을 맞히면 다음 단계가 열려요.
+      - generic [ref=e48]:
+        - generic [ref=e49]: 코스 진행률
+        - strong [ref=e50]: 1 / 10
+      - generic [ref=e53]: 오늘의 도전
+      - generic "문제 진행 상황" [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: ✓
+          - generic [ref=e57]: 두 수를 더해요
+        - generic [ref=e58]:
+          - generic [ref=e59]: "02"
+          - generic [ref=e60]: 직사각형의 넓이
+        - generic [ref=e61]:
+          - generic [ref=e62]: "03"
+          - generic [ref=e63]: 세 수 중 가장 큰 수
+        - generic [ref=e64]:
+          - generic [ref=e65]: "04"
+          - generic [ref=e66]: 짝수는 몇 개일까요?
+        - generic [ref=e67]:
+          - generic [ref=e68]: "05"
+          - generic [ref=e69]: 1부터 N까지 더하기
+        - generic [ref=e70]:
+          - generic [ref=e71]: "06"
+          - generic [ref=e72]: 구구단 한 단 출력하기
+        - generic [ref=e73]:
+          - generic [ref=e74]: "07"
+          - generic [ref=e75]: 숫자의 각 자리 더하기
+        - generic [ref=e76]:
+          - generic [ref=e77]: "08"
+          - generic [ref=e78]: 단어의 글자 수
+        - generic [ref=e79]:
+          - generic [ref=e80]: "09"
+          - generic [ref=e81]: 숫자를 거꾸로 뒤집기
+        - generic [ref=e82]:
+          - generic [ref=e83]: "10"
+          - generic [ref=e84]: 별 계단 만들기
+      - generic [ref=e85]:
+        - text: 차근차근 풀어 봐요
+        - text: 각 문제에는 화면에 표시되지 않는 추가 테스트도 있어요. 예시만 맞히는 것보다 다양한 경우를 생각해 보세요.
+    - main [ref=e86]:
+      - generic [ref=e87]: 학습 코스 / 중학 파이썬 첫걸음
+      - generic [ref=e88]:
+        - generic [ref=e89]:
+          - generic [ref=e90]: PROBLEM 02 / 10
+          - heading "직사각형의 넓이" [level=1] [ref=e91]
+          - paragraph [ref=e92]: 입력받은 값으로 간단한 계산을 해 봐요.
+        - generic [ref=e93]: 기초 문법
+      - generic [ref=e94]:
+        - region "문제" [ref=e95]:
+          - generic [ref=e96]:
+            - generic [ref=e97]:
+              - generic [ref=e98]: 문제
+              - generic [ref=e99]: 문장을 읽고 조건에 맞는 프로그램을 작성하세요
+            - generic [ref=e100]: "02"
+          - generic [ref=e101]:
+            - paragraph [ref=e102]: 직사각형의 가로와 세로 길이가 주어집니다. 직사각형의 넓이를 구해 출력하세요. 넓이는 가로에 세로를 곱한 값입니다.
+            - generic [ref=e103]:
+              - generic [ref=e104]: 예시
+              - generic [ref=e105]:
+                - generic [ref=e106]:
+                  - generic [ref=e107]: 입력
+                  - code [ref=e108]: 4 6
+                - generic [ref=e109]:
+                  - generic [ref=e110]: 출력
+                  - code [ref=e111]: "24"
+            - generic [ref=e112]:
+              - heading "입력과 출력" [level=2] [ref=e113]
+              - paragraph [ref=e114]: 첫째 줄에 가로와 세로 길이가 공백으로 구분되어 주어집니다. 직사각형의 넓이를 출력합니다.
+            - generic [ref=e115]:
+              - generic [ref=e116]: "*"
+              - generic [ref=e117]: 채점에는 예시 외 비공개 테스트도 사용됩니다.
+        - generic [ref=e118]:
+          - region "파이썬 코드 입력" [ref=e119]:
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - generic [ref=e122]: PY
+                - text: solution.py
+              - generic [ref=e123]: · 준비 완료
+            - generic [ref=e124]:
+              - generic [ref=e125]: "1"
+              - textbox "파이썬 코드 입력창" [ref=e126]:
+                - /placeholder: "# 여기에 파이썬 코드를 작성하세요"
+            - generic [ref=e127]:
+              - generic [ref=e128]: Ln 1, Col 1
+              - generic [ref=e129]: Python 3
+          - generic [ref=e130]:
+            - generic [ref=e131]: 제출하면 비공개 테스트케이스로 자동 채점합니다.
+            - generic [ref=e132]:
+              - button "모범 답안" [ref=e133] [cursor=pointer]
+              - button "▶ 제출하기" [ref=e134] [cursor=pointer]:
+                - generic [ref=e135]: ▶
+                - text: 제출하기
+          - region "채점 결과" [ref=e136]:
+            - generic [ref=e137]:
+              - generic [ref=e138]:
+                - generic [ref=e139]: 채점 결과
+                - generic [ref=e140]: 코드를 실행하면 결과를 확인할 수 있어요
+              - generic [ref=e141]: —
+            - generic [ref=e142]: 예시 입력을 먼저 확인하고 코드를 작성해 보세요.
+          - generic [ref=e144]:
+            - button "← 이전 문제" [ref=e145] [cursor=pointer]
+            - button "다음 문제 →" [disabled] [ref=e146]
